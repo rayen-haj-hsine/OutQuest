@@ -9,6 +9,9 @@ import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import QuestPickerScreen from './src/screens/QuestPickerScreen';
 import QuestDetailScreen from './src/screens/QuestDetailScreen';
+import CompleteQuestScreen from './src/screens/CompleteQuestScreen';
+import ResultScreen from './src/screens/ResultScreen';
+import LeaderboardScreen from './src/screens/LeaderboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -91,6 +94,9 @@ export default function App() {
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="QuestPicker" component={QuestPickerScreen} options={{ title: 'Find a Quest' }} />
           <Stack.Screen name="QuestDetail" component={QuestDetailScreen} options={{ title: 'Quest Details' }} />
+          <Stack.Screen name="CompleteQuest" component={CompleteQuestScreen} options={{ title: 'Submit Proof' }} />
+          <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Quest Complete', headerShown: false }} />
+          <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </>

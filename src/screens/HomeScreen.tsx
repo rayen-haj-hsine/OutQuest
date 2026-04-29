@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { auth, fetchUserProfile } from '../services/firebase';
 import { UserProfile } from '../types';
 import { theme } from '../utils/theme';
+import { getTotalXpForLevel } from '../utils/xp';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -43,8 +44,11 @@ export default function HomeScreen() {
     );
   }
 
-  const currentLevelXp = profile.xp - ((profile.level - 1) * 100);
-  const progressPercent = Math.min((currentLevelXp / 100) * 100, 100);
+  const currentLevelMinXp = getTotalXpForLevel(profile.level);
+  const nextLevelMinXp = getTotalXpForLevel(profile.level + 1);
+  const xpInCurrentLevel = profile.xp - currentLevelMinXp;
+  const xpNeededForNextLevel = nextLevelMinXp - currentLevelMinXp;
+  const progressPercent = Math.min((xpInCurrentLevel / xpNeededForNextLevel) * 100, 100);
 
   return (
     <View style={styles.container}>
@@ -66,6 +70,10 @@ export default function HomeScreen() {
       <View style={styles.rowButtons}>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Profile')}>
           <Text style={styles.secondaryButtonText}>Profile</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Leaderboard')}>
+          <Text style={styles.secondaryButtonText}>Leaderboard</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -147,7 +155,7 @@ const styles = StyleSheet.create({
   },
   rowButtons: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     width: '100%',
   },
   secondaryButton: {
@@ -155,7 +163,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.m,
     paddingHorizontal: theme.spacing.l,
     borderRadius: theme.borderRadius.m,
-    width: '100%',
+    flex: 0.48,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.primary + '80',
