@@ -6,6 +6,9 @@ import { auth, signInAndGetUid, fetchUserProfile, createUserProfile } from './sr
 import { theme } from './src/utils/theme';
 
 import HomeScreen from './src/screens/HomeScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import QuestPickerScreen from './src/screens/QuestPickerScreen';
+import QuestDetailScreen from './src/screens/QuestDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -85,6 +88,9 @@ export default function App() {
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'OutQuest' }} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="QuestPicker" component={QuestPickerScreen} options={{ title: 'Find a Quest' }} />
+          <Stack.Screen name="QuestDetail" component={QuestDetailScreen} options={{ title: 'Quest Details' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </>

@@ -59,8 +59,15 @@ export default function HomeScreen() {
         <Text style={styles.xpText}>{profile.xp} XP</Text>
       </View>
 
-      <Text style={styles.welcomeText}>Welcome to your mythic journey.</Text>
-      <Text style={styles.subText}>Sprint 1: Foundation Complete.</Text>
+      <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('QuestPicker')}>
+        <Text style={styles.primaryButtonText}>Get Quest</Text>
+      </TouchableOpacity>
+      
+      <View style={styles.rowButtons}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Profile')}>
+          <Text style={styles.secondaryButtonText}>Profile</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -124,16 +131,39 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 14,
   },
-  welcomeText: {
+  primaryButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.m,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.m,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: theme.spacing.m,
+  },
+  primaryButtonText: {
+    color: theme.colors.background,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  rowButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  secondaryButton: {
+    backgroundColor: theme.colors.card,
+    paddingVertical: theme.spacing.m,
+    paddingHorizontal: theme.spacing.l,
+    borderRadius: theme.borderRadius.m,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '80',
+  },
+  secondaryButtonText: {
     color: theme.colors.text,
     fontSize: 16,
-    textAlign: 'center',
-    marginTop: theme.spacing.xl,
-  },
-  subText: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
-    marginTop: theme.spacing.s,
+    fontWeight: 'bold',
   },
   text: {
     color: theme.colors.text,
