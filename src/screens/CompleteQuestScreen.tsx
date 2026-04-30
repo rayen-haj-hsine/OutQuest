@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
+import { ShieldCheck, Feather, Scroll as ScrollIcon, Camera, X } from 'lucide-react-native';
 import { auth, fetchUserProfile, updateUserProfile, recordQuestCompletion } from '../services/firebase';
 import { Quest } from '../types';
 import { theme } from '../utils/theme';
@@ -13,22 +14,37 @@ export default function CompleteQuestScreen() {
   const { quest } = route.params as { quest: Quest };
 
   const [report, setReport] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'We need access to your photos to chronicle your deeds.');
+      return;
+    }
+
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
-      quality: 0.5,
+      aspect: [1, 1],
+      quality: 0.2, // Aggressive compression for zero-budget storage
+      base64: true,
     });
 
-    if (!result.canceled) {
-      setPhotoUri(result.assets[0].uri);
+    if (!result.canceled && result.assets[0].base64) {
+      setPhotoPreview(result.assets[0].uri);
+      setPhotoBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
     }
   };
 
   const handleComplete = async () => {
+    if (!report.trim() && !photoBase64) {
+      Alert.alert("Proof Required", "You must provide either a scribe's note or a photo proof to swear the oath.");
+      return;
+    }
+
     setLoading(true);
     try {
       const uid = auth.currentUser?.uid;
@@ -41,15 +57,15 @@ export default function CompleteQuestScreen() {
       const proofTypes = [];
       
       if (report.trim().length > 0) {
-        earnedXp += 10;
+        earnedXp += 15;
         proofTypes.push('written');
       }
-      if (photoUri) {
-        earnedXp += 15;
+      if (photoBase64) {
+        earnedXp += 25; 
         proofTypes.push('photo');
       }
       if (quest.difficulty === 'Mythic') {
-        earnedXp += 25;
+        earnedXp += 50;
       }
 
       const newTotalXp = profile.xp + earnedXp;
@@ -77,7 +93,9 @@ export default function CompleteQuestScreen() {
         difficulty: quest.difficulty,
         xpEarned: earnedXp,
         proofTypes,
-        reportPreview: report.substring(0, 200),
+        reportPreview: report.substring(0, 100),
+        reportFull: report,
+        photoUrl: photoBase64 || undefined, // Saving base64 string directly as the URL
         createdAt: Date.now()
       });
 
@@ -88,59 +106,100 @@ export default function CompleteQuestScreen() {
           { name: 'Result', params: { quest, earnedXp, levelUp, newTitle } }
         ],
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      Alert.alert("Error", error.message || "Failed to chronicle your deed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Submit Proof: {quest.title}</Text>
-      <Text style={styles.reqText}>Required: {quest.proofRequired}</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <ScrollIcon color={theme.colors.primary} size={32} />
+        <Text style={styles.headerTitle}>CHRONICLE YOUR DEED</Text>
+        <Text style={styles.questTitle}>{quest.title}</Text>
+      </View>
 
-      <Text style={styles.label}>Written Report (Optional, +10 XP)</Text>
-      <TextInput
-        style={styles.input}
-        multiline
-        numberOfLines={4}
-        placeholder="What happened? Keep it brief..."
-        placeholderTextColor={theme.colors.textMuted}
-        value={report}
-        onChangeText={setReport}
-      />
+      <View style={styles.section}>
+        <View style={styles.labelRow}>
+          <Feather color={theme.colors.primary} size={16} />
+          <Text style={styles.label}>SCRIBE'S NOTES (+15 XP)</Text>
+        </View>
+        <TextInput
+          style={styles.input}
+          multiline
+          numberOfLines={4}
+          placeholder="Describe your journey briefly..."
+          placeholderTextColor={theme.colors.textMuted}
+          value={report}
+          onChangeText={setReport}
+        />
+      </View>
 
-      <Text style={styles.label}>Photo Proof (Optional, +15 XP)</Text>
-      <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
-        <Text style={styles.photoButtonText}>{photoUri ? 'Change Photo' : 'Select Photo (Local)'}</Text>
-      </TouchableOpacity>
-      
-      {photoUri && <Image source={{ uri: photoUri }} style={styles.previewImage} />}
-      <Text style={styles.disclaimer}>Photos stay on your device. Only metadata is saved.</Text>
+      <View style={styles.section}>
+        <View style={styles.labelRow}>
+          <Camera color={theme.colors.primary} size={16} />
+          <Text style={styles.label}>VISUAL EVIDENCE (+25 XP)</Text>
+        </View>
+        
+        {photoPreview ? (
+          <View style={styles.previewContainer}>
+            <Image source={{ uri: photoPreview }} style={styles.previewImage} />
+            <TouchableOpacity style={styles.removePhoto} onPress={() => { setPhotoPreview(null); setPhotoBase64(null); }}>
+              <X color="#fff" size={20} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+            <Text style={styles.photoButtonText}>CAPTURE EVIDENCE</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={styles.oathContainer}>
+        <ShieldCheck color={theme.colors.primary} size={24} />
+        <Text style={styles.oathTitle}>THE OATH OF TRUTH</Text>
+        <Text style={styles.oathText}>
+          "I take a solemn oath upon my honor as a Wanderer that I have completed this quest in the physical realm."
+        </Text>
+      </View>
 
       <TouchableOpacity 
         style={[styles.submitButton, loading && styles.submitButtonDisabled]} 
         onPress={handleComplete}
         disabled={loading}
       >
-        {loading ? <ActivityIndicator color={theme.colors.background} /> : <Text style={styles.submitButtonText}>Complete Quest</Text>}
+        {loading ? (
+          <ActivityIndicator color={theme.colors.background} />
+        ) : (
+          <Text style={styles.submitButtonText}>I SWEAR BY THE MYTH</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, padding: theme.spacing.m },
-  title: { fontSize: 20, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.s },
-  reqText: { color: theme.colors.primary, marginBottom: theme.spacing.l },
-  label: { color: theme.colors.text, marginBottom: theme.spacing.s, fontSize: 16 },
-  input: { backgroundColor: theme.colors.card, color: theme.colors.text, padding: theme.spacing.m, borderRadius: theme.borderRadius.s, borderWidth: 1, borderColor: theme.colors.primary + '40', marginBottom: theme.spacing.l, textAlignVertical: 'top', minHeight: 100 },
-  photoButton: { backgroundColor: theme.colors.card, padding: theme.spacing.m, borderRadius: theme.borderRadius.s, borderWidth: 1, borderColor: theme.colors.primary, alignItems: 'center', marginBottom: theme.spacing.s },
-  photoButtonText: { color: theme.colors.primary, fontWeight: 'bold' },
-  previewImage: { width: '100%', height: 200, borderRadius: theme.borderRadius.s, marginBottom: theme.spacing.s },
-  disclaimer: { color: theme.colors.textMuted, fontSize: 12, marginBottom: theme.spacing.xl, textAlign: 'center' },
-  submitButton: { backgroundColor: theme.colors.secondary, padding: theme.spacing.m, borderRadius: theme.borderRadius.m, alignItems: 'center', marginBottom: theme.spacing.xl },
-  submitButtonDisabled: { opacity: 0.6 },
-  submitButtonText: { color: theme.colors.background, fontSize: 18, fontWeight: 'bold' }
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  content: { padding: theme.spacing.l, paddingTop: theme.spacing.xl },
+  header: { alignItems: 'center', marginBottom: theme.spacing.xl },
+  headerTitle: { color: theme.colors.textMuted, fontSize: 12, fontFamily: theme.fonts.subtitle, letterSpacing: 3, marginTop: theme.spacing.m },
+  questTitle: { color: theme.colors.text, fontSize: 24, fontFamily: theme.fonts.title, textAlign: 'center', marginTop: theme.spacing.xs },
+  section: { marginBottom: theme.spacing.xl },
+  labelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.s },
+  label: { color: theme.colors.primary, fontSize: 12, fontFamily: theme.fonts.subtitle, marginLeft: theme.spacing.s, letterSpacing: 1 },
+  input: { backgroundColor: theme.colors.card, color: theme.colors.text, padding: theme.spacing.m, borderRadius: theme.borderRadius.m, borderWidth: 1, borderColor: theme.colors.border, minHeight: 100, textAlignVertical: 'top', fontFamily: theme.fonts.body },
+  photoButton: { backgroundColor: theme.colors.card, paddingVertical: theme.spacing.xl, borderRadius: theme.borderRadius.m, borderWidth: 1, borderColor: theme.colors.primary, borderStyle: 'dashed', alignItems: 'center' },
+  photoButtonText: { color: theme.colors.primary, fontFamily: theme.fonts.title, letterSpacing: 1 },
+  previewContainer: { position: 'relative' },
+  previewImage: { width: '100%', height: 200, borderRadius: theme.borderRadius.m },
+  removePhoto: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 15, padding: 5 },
+  oathContainer: { backgroundColor: theme.colors.card, padding: theme.spacing.l, borderRadius: theme.borderRadius.l, borderWidth: 1, borderColor: theme.colors.primary + '40', alignItems: 'center', marginBottom: theme.spacing.xxl, borderStyle: 'dashed' },
+  oathTitle: { color: theme.colors.primary, fontSize: 14, fontFamily: theme.fonts.title, marginTop: theme.spacing.s, letterSpacing: 2 },
+  oathText: { color: theme.colors.text, fontSize: 14, fontFamily: theme.fonts.body, fontStyle: 'italic', textAlign: 'center', marginTop: theme.spacing.m, lineHeight: 20, opacity: 0.8 },
+  submitButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.l, borderRadius: theme.borderRadius.xl, alignItems: 'center', ...theme.shadows.glow },
+  submitButtonDisabled: { opacity: 0.5 },
+  submitButtonText: { color: theme.colors.background, fontSize: 16, fontFamily: theme.fonts.title, letterSpacing: 1 }
 });

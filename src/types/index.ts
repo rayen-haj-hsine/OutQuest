@@ -4,7 +4,6 @@ export interface Quest {
   id: string;
   title: string;
   difficulty: Difficulty;
-  estimatedTime: string;
   description: string;
   proofRequired: string;
   baseXp: number;
@@ -23,7 +22,9 @@ export interface UserProfile {
   title: string;
   completedQuestCount: number;
   mythicQuestCount: number;
+  isTester?: boolean;
   createdAt: number;
+
   updatedAt: number;
 }
 
@@ -36,5 +37,7 @@ export interface QuestCompletion {
   xpEarned: number;
   proofTypes: string[];
   reportPreview: string; // max 200 chars
+  reportFull?: string;
+  photoUrl?: string;
   createdAt: number;
 }

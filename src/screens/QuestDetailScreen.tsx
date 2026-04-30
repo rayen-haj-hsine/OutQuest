@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Clock, Award, ShieldAlert, ArrowLeft } from 'lucide-react-native';
 import { Quest } from '../types';
 import { theme } from '../utils/theme';
 
@@ -10,62 +12,179 @@ export default function QuestDetailScreen() {
   const { quest } = route.params as { quest: Quest };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={styles.difficulty}>{quest.difficulty}</Text>
-          <Text style={styles.time}>{quest.estimatedTime}</Text>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.category}>{quest.category.toUpperCase()}</Text>
+          <Text style={styles.title}>{quest.title}</Text>
+          <View style={[styles.difficultyBadge, { borderColor: theme.colors.primary }]}>
+            <Text style={styles.difficultyText}>{quest.difficulty}</Text>
+          </View>
         </View>
-        <Text style={styles.title}>{quest.title}</Text>
-        
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Objective</Text>
-          <Text style={styles.text}>{quest.description}</Text>
+
+        <View style={styles.infoRow}>
+          <View style={styles.infoItem}>
+            <Award color={theme.colors.primary} size={20} />
+            <Text style={styles.infoValue}>{quest.baseXp}</Text>
+            <Text style={styles.infoLabel}>XP REWARD</Text>
+          </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Proof Required</Text>
-          <Text style={styles.text}>{quest.proofRequired}</Text>
+          <Text style={styles.sectionTitle}>THE MISSION</Text>
+          <Text style={styles.description}>{quest.description}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Rewards</Text>
-          <Text style={styles.rewardText}>+{quest.baseXp} XP</Text>
-          {quest.bonusXpRules && <Text style={styles.bonusText}>{quest.bonusXpRules}</Text>}
-          {quest.titleReward && <Text style={styles.titleRewardText}>Title: {quest.titleReward}</Text>}
+          <Text style={styles.sectionTitle}>PROOF REQUIRED</Text>
+          <View style={styles.proofBox}>
+            <Text style={styles.proofText}>{quest.proofRequired}</Text>
+          </View>
         </View>
 
         {quest.safetyNotes && (
-          <View style={styles.safetyBox}>
-            <Text style={styles.safetyTitle}>Safety Note</Text>
+          <View style={styles.safetySection}>
+            <ShieldAlert color={theme.colors.danger} size={18} />
             <Text style={styles.safetyText}>{quest.safetyNotes}</Text>
           </View>
         )}
-      </View>
 
-      <TouchableOpacity style={styles.startButton} onPress={() => navigation.navigate('CompleteQuest', { quest })}>
-        <Text style={styles.startButtonText}>Accept Quest</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity 
+          activeOpacity={0.8}
+          style={styles.acceptButtonContainer}
+          onPress={() => navigation.navigate('CompleteQuest', { quest })}
+        >
+          <LinearGradient
+            colors={[theme.colors.secondary, '#5A1212']}
+            style={styles.acceptButton}
+          >
+            <Text style={styles.acceptButtonText}>ACCEPT QUEST</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, padding: theme.spacing.m },
-  card: { backgroundColor: theme.colors.card, padding: theme.spacing.l, borderRadius: theme.borderRadius.m, borderWidth: 1, borderColor: theme.colors.primary + '40', marginBottom: theme.spacing.l },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.s },
-  difficulty: { color: theme.colors.primary, fontWeight: 'bold', textTransform: 'uppercase' },
-  time: { color: theme.colors.textMuted },
-  title: { fontSize: 24, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.m },
-  section: { marginBottom: theme.spacing.m },
-  sectionTitle: { fontSize: 16, color: theme.colors.primary, marginBottom: theme.spacing.s },
-  text: { color: theme.colors.text, lineHeight: 22 },
-  rewardText: { color: theme.colors.secondary, fontWeight: 'bold', fontSize: 18 },
-  bonusText: { color: theme.colors.secondary, marginTop: 4 },
-  titleRewardText: { color: theme.colors.primary, marginTop: 4, fontWeight: 'bold' },
-  safetyBox: { backgroundColor: theme.colors.danger + '20', padding: theme.spacing.m, borderRadius: theme.borderRadius.s, borderWidth: 1, borderColor: theme.colors.danger + '50' },
-  safetyTitle: { color: theme.colors.danger, fontWeight: 'bold', marginBottom: 4 },
-  safetyText: { color: theme.colors.text, fontSize: 14 },
-  startButton: { backgroundColor: theme.colors.primary, padding: theme.spacing.m, borderRadius: theme.borderRadius.m, alignItems: 'center', marginBottom: theme.spacing.xl },
-  startButtonText: { color: theme.colors.background, fontSize: 18, fontWeight: 'bold' }
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    padding: theme.spacing.l,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
+  category: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontFamily: theme.fonts.body,
+    letterSpacing: 2,
+    marginBottom: theme.spacing.s,
+  },
+  title: {
+    color: theme.colors.text,
+    fontSize: 32,
+    fontFamily: theme.fonts.title,
+    textAlign: 'center',
+    marginBottom: theme.spacing.m,
+  },
+  difficultyBadge: {
+    paddingHorizontal: theme.spacing.m,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  difficultyText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontFamily: theme.fonts.subtitle,
+    letterSpacing: 1,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.l,
+    padding: theme.spacing.l,
+    marginBottom: theme.spacing.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  infoItem: {
+    alignItems: 'center',
+  },
+  infoValue: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontFamily: theme.fonts.title,
+    marginTop: theme.spacing.s,
+  },
+  infoLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    fontFamily: theme.fonts.body,
+    marginTop: 2,
+  },
+  section: {
+    marginBottom: theme.spacing.xl,
+  },
+  sectionTitle: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontFamily: theme.fonts.subtitle,
+    letterSpacing: 2,
+    marginBottom: theme.spacing.m,
+  },
+  description: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontFamily: theme.fonts.body,
+    lineHeight: 24,
+  },
+  proofBox: {
+    backgroundColor: '#000',
+    padding: theme.spacing.m,
+    borderRadius: theme.borderRadius.m,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+  },
+  proofText: {
+    color: theme.colors.text,
+    fontSize: 14,
+    fontFamily: theme.fonts.body,
+    fontStyle: 'italic',
+  },
+  safetySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.danger + '15',
+    padding: theme.spacing.m,
+    borderRadius: theme.borderRadius.m,
+    marginBottom: theme.spacing.xxl,
+  },
+  safetyText: {
+    color: theme.colors.danger,
+    fontSize: 12,
+    fontFamily: theme.fonts.body,
+    marginLeft: theme.spacing.s,
+    flex: 1,
+  },
+  acceptButtonContainer: {
+    ...theme.shadows.card,
+  },
+  acceptButton: {
+    paddingVertical: theme.spacing.l,
+    borderRadius: theme.borderRadius.m,
+    alignItems: 'center',
+  },
+  acceptButtonText: {
+    color: theme.colors.text,
+    fontSize: 18,
+    fontFamily: theme.fonts.title,
+    letterSpacing: 2,
+  },
 });

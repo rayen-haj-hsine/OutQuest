@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { User, Trophy, Sword, ChevronRight } from 'lucide-react-native';
 import { auth, fetchUserProfile } from '../services/firebase';
 import { UserProfile } from '../types';
 import { theme } from '../utils/theme';
 import { getTotalXpForLevel } from '../utils/xp';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -52,28 +56,66 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{profile.title}</Text>
-      <Text style={styles.username}>{profile.avatarPreset} {profile.username}</Text>
-      
-      <View style={styles.statsCard}>
-        <Text style={styles.levelText}>Level {profile.level}</Text>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-        </View>
-        <Text style={styles.xpText}>{profile.xp} XP</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>{profile.title}</Text>
+        <Text style={styles.username}>{profile.avatarPreset} {profile.username}</Text>
       </View>
+      
+      <LinearGradient
+        colors={[theme.colors.card, '#121217']}
+        style={[styles.statsCard, theme.shadows.card]}
+      >
+        <View style={styles.levelBadge}>
+          <Text style={styles.levelNumber}>{profile.level}</Text>
+          <Text style={styles.levelLabel}>LEVEL</Text>
+        </View>
 
-      <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('QuestPicker')}>
-        <Text style={styles.primaryButtonText}>Get Quest</Text>
+        <View style={styles.progressSection}>
+          <View style={styles.progressBarBg}>
+            <LinearGradient
+              colors={[theme.colors.primary, '#B8860B']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+            />
+          </View>
+          <View style={styles.xpRow}>
+            <Text style={styles.xpText}>{profile.xp} XP</Text>
+            <Text style={styles.xpTextMuted}>/ {nextLevelMinXp} XP</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      <TouchableOpacity 
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('QuestPicker')}
+        style={styles.mainAction}
+      >
+        <LinearGradient
+          colors={[theme.colors.primary, '#B8860B']}
+          style={styles.mainActionButton}
+        >
+          <Sword color={theme.colors.background} size={24} />
+          <Text style={styles.mainActionText}>FIND A QUEST</Text>
+          <ChevronRight color={theme.colors.background} size={20} />
+        </LinearGradient>
       </TouchableOpacity>
       
       <View style={styles.rowButtons}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.secondaryButtonText}>Profile</Text>
+        <TouchableOpacity 
+          style={styles.secondaryButton} 
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <User color={theme.colors.primary} size={20} />
+          <Text style={styles.secondaryButtonText}>PROFILE</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Leaderboard')}>
-          <Text style={styles.secondaryButtonText}>Leaderboard</Text>
+        <TouchableOpacity 
+          style={styles.secondaryButton} 
+          onPress={() => navigation.navigate('Leaderboard')}
+        >
+          <Trophy color={theme.colors.primary} size={20} />
+          <Text style={styles.secondaryButtonText}>HALL OF FAME</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -84,8 +126,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    padding: theme.spacing.m,
-    alignItems: 'center',
+    padding: theme.spacing.l,
     justifyContent: 'center',
   },
   center: {
@@ -94,86 +135,128 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: theme.colors.background,
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
   title: {
     color: theme.colors.primary,
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing.s,
+    fontSize: 28,
+    fontFamily: theme.fonts.title,
+    marginBottom: theme.spacing.xs,
     textTransform: 'uppercase',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   username: {
-    color: theme.colors.text,
-    fontSize: 18,
-    marginBottom: theme.spacing.xl,
+    color: theme.colors.textMuted,
+    fontSize: 16,
+    fontFamily: theme.fonts.body,
+    letterSpacing: 1,
   },
   statsCard: {
-    backgroundColor: theme.colors.card,
     padding: theme.spacing.l,
-    borderRadius: theme.borderRadius.m,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    borderRadius: theme.borderRadius.l,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '40',
+    borderColor: theme.colors.border,
+    marginBottom: theme.spacing.xxl,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  levelText: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing.m,
+  levelBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#000',
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.m,
+  },
+  levelNumber: {
+    color: theme.colors.primary,
+    fontSize: 22,
+    fontFamily: theme.fonts.title,
+    lineHeight: 26,
+  },
+  levelLabel: {
+    color: theme.colors.primary,
+    fontSize: 8,
+    fontFamily: theme.fonts.subtitle,
+    marginTop: -2,
+  },
+  progressSection: {
+    flex: 1,
   },
   progressBarBg: {
-    height: 10,
-    width: '100%',
+    height: 8,
     backgroundColor: '#000',
-    borderRadius: 5,
+    borderRadius: 4,
     overflow: 'hidden',
     marginBottom: theme.spacing.s,
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
+    borderRadius: 4,
+  },
+  xpRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
   },
   xpText: {
-    color: theme.colors.textMuted,
+    color: theme.colors.text,
     fontSize: 14,
+    fontFamily: theme.fonts.bodyBold,
   },
-  primaryButton: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.m,
-    paddingHorizontal: theme.spacing.xl,
-    borderRadius: theme.borderRadius.m,
-    width: '100%',
+  xpTextMuted: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontFamily: theme.fonts.body,
+    marginLeft: 4,
+  },
+  mainAction: {
+    marginBottom: theme.spacing.l,
+    ...theme.shadows.glow,
+  },
+  mainActionButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.m,
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.l,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
   },
-  primaryButtonText: {
+  mainActionText: {
     color: theme.colors.background,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: theme.fonts.title,
+    letterSpacing: 2,
   },
   rowButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
   },
   secondaryButton: {
+    flexDirection: 'row',
     backgroundColor: theme.colors.card,
     paddingVertical: theme.spacing.m,
-    paddingHorizontal: theme.spacing.l,
+    paddingHorizontal: theme.spacing.m,
     borderRadius: theme.borderRadius.m,
     flex: 0.48,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.primary + '80',
+    borderColor: theme.colors.border,
   },
   secondaryButtonText: {
     color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontFamily: theme.fonts.subtitle,
+    marginLeft: theme.spacing.s,
+    letterSpacing: 1,
   },
   text: {
     color: theme.colors.text,
+    fontFamily: theme.fonts.body,
   }
 });

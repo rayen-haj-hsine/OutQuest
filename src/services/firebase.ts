@@ -2,7 +2,7 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, initializeAuth, signInAnonymously } from 'firebase/auth';
 // @ts-ignore
 import { getReactNativePersistence } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, orderBy, limit, getDocs, initializeFirestore, where } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserProfile, QuestCompletion } from '../types';
 
@@ -29,8 +29,10 @@ export const auth = (() => {
   }
 })();
 
-// Use standard getFirestore for now
 export const db = getFirestore(app);
+
+// Zero-Budget Storage: We skip Firebase Storage to avoid the paywall/credit card requirement.
+// We save small compressed Base64 strings directly in Firestore.
 
 export const signInAndGetUid = async () => {
   const { user } = await signInAnonymously(auth);
@@ -56,6 +58,40 @@ export const updateUserProfile = async (uid: string, data: Partial<UserProfile>)
 
 export const recordQuestCompletion = async (completion: QuestCompletion) => {
   await addDoc(collection(db, 'questCompletions'), completion);
+};
+
+export const getTodayCompletions = async (uid: string): Promise<QuestCompletion[]> => {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  const q = query(
+    collection(db, 'questCompletions'),
+    where('userId', '==', uid)
+  );
+  
+  const querySnapshot = await getDocs(q);
+  const completions: QuestCompletion[] = [];
+  querySnapshot.forEach((doc) => {
+    const data = doc.data() as QuestCompletion;
+    if (data.createdAt >= startOfDay.getTime()) {
+      completions.push(data);
+    }
+  });
+  return completions;
+};
+
+export const fetchUserCompletions = async (uid: string): Promise<QuestCompletion[]> => {
+  const q = query(
+    collection(db, 'questCompletions'),
+    where('userId', '==', uid)
+  );
+  const querySnapshot = await getDocs(q);
+  const completions: QuestCompletion[] = [];
+  querySnapshot.forEach((doc) => {
+    completions.push(doc.data() as QuestCompletion);
+  });
+  
+  return completions.sort((a, b) => b.createdAt - a.createdAt);
 };
 
 export const getTopUsers = async (): Promise<UserProfile[]> => {

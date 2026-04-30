@@ -1,68 +1,136 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Quest } from '../types';
+import { LinearGradient } from 'expo-linear-gradient';
+import { CheckCircle, Share2, Home, Star } from 'lucide-react-native';
 import { theme } from '../utils/theme';
 
 export default function ResultScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const { quest, earnedXp, levelUp, newTitle } = route.params as { quest: Quest, earnedXp: number, levelUp: boolean, newTitle: string };
-
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `I just completed the "${quest.title}" quest in OutQuest and earned ${earnedXp} XP!\n\nJoin the adventure and find magic in the mundane.`,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const { quest, earnedXp, levelUp, newTitle } = route.params;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>QUEST COMPLETED</Text>
-      
-      <View style={styles.card}>
-        <Text style={styles.title}>{quest.title}</Text>
-        <Text style={styles.difficulty}>{quest.difficulty} Difficulty</Text>
-        
-        <View style={styles.divider} />
-        
-        <Text style={styles.xpText}>+{earnedXp} XP</Text>
-        
-        {levelUp && (
-          <View style={styles.levelUpBox}>
-            <Text style={styles.levelUpText}>LEVEL UP!</Text>
-            {newTitle && <Text style={styles.titleUnlock}>New Title: {newTitle}</Text>}
+      <LinearGradient
+        colors={['#1A1A1F', theme.colors.background]}
+        style={styles.gradient}
+      >
+        <View style={styles.content}>
+          <View style={styles.iconContainer}>
+            <CheckCircle color={theme.colors.success} size={80} />
           </View>
-        )}
-      </View>
 
-      <TouchableOpacity style={styles.primaryButton} onPress={handleShare}>
-        <Text style={styles.primaryButtonText}>Share Legend</Text>
-      </TouchableOpacity>
+          <Text style={styles.congrats}>QUEST COMPLETE</Text>
+          <Text style={styles.questTitle}>{quest.title}</Text>
 
-      <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate('Home')}>
-        <Text style={styles.secondaryButtonText}>Return to Dashboard</Text>
-      </TouchableOpacity>
+          <View style={styles.rewardCard}>
+            <Star color={theme.colors.primary} size={24} fill={theme.colors.primary} />
+            <Text style={styles.xpGained}>+{earnedXp} XP</Text>
+          </View>
+
+          {levelUp && (
+            <View style={styles.levelUpCard}>
+              <Text style={styles.levelUpText}>LEVEL UP!</Text>
+              {newTitle && <Text style={styles.newTitle}>New Title: {newTitle}</Text>}
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.homeButton} onPress={() => navigation.navigate('Home')}>
+            <LinearGradient
+              colors={[theme.colors.primary, '#B8860B']}
+              style={styles.homeButtonGradient}
+            >
+              <Home color={theme.colors.background} size={20} />
+              <Text style={styles.homeButtonText}>RETURN TO SANCTUARY</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, padding: theme.spacing.m, justifyContent: 'center', alignItems: 'center' },
-  header: { fontSize: 28, fontWeight: 'bold', color: theme.colors.primary, marginBottom: theme.spacing.xl, letterSpacing: 2 },
-  card: { backgroundColor: theme.colors.card, padding: theme.spacing.xl, borderRadius: theme.borderRadius.l, width: '100%', alignItems: 'center', borderWidth: 2, borderColor: theme.colors.primary + '80', marginBottom: theme.spacing.xl },
-  title: { fontSize: 22, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.s, textAlign: 'center' },
-  difficulty: { color: theme.colors.textMuted, marginBottom: theme.spacing.m },
-  divider: { height: 1, backgroundColor: theme.colors.textMuted + '40', width: '80%', marginBottom: theme.spacing.m },
-  xpText: { fontSize: 32, fontWeight: 'bold', color: theme.colors.secondary, marginBottom: theme.spacing.m },
-  levelUpBox: { backgroundColor: theme.colors.primary + '20', padding: theme.spacing.m, borderRadius: theme.borderRadius.s, width: '100%', alignItems: 'center', marginTop: theme.spacing.m },
-  levelUpText: { color: theme.colors.primary, fontSize: 18, fontWeight: 'bold' },
-  titleUnlock: { color: theme.colors.text, marginTop: theme.spacing.s },
-  primaryButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.m, paddingHorizontal: theme.spacing.xl, borderRadius: theme.borderRadius.m, width: '100%', alignItems: 'center', marginBottom: theme.spacing.m },
-  primaryButtonText: { color: theme.colors.background, fontSize: 18, fontWeight: 'bold' },
-  secondaryButton: { paddingVertical: theme.spacing.m, paddingHorizontal: theme.spacing.xl, width: '100%', alignItems: 'center' },
-  secondaryButtonText: { color: theme.colors.textMuted, fontSize: 16, fontWeight: 'bold' },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  gradient: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.xl,
+  },
+  iconContainer: {
+    marginBottom: theme.spacing.xl,
+  },
+  congrats: {
+    color: theme.colors.primary,
+    fontSize: 20,
+    fontFamily: theme.fonts.subtitle,
+    letterSpacing: 4,
+    marginBottom: theme.spacing.s,
+  },
+  questTitle: {
+    color: theme.colors.text,
+    fontSize: 28,
+    fontFamily: theme.fonts.title,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
+  rewardCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.card,
+    paddingVertical: theme.spacing.m,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '40',
+    marginBottom: theme.spacing.xxl,
+  },
+  xpGained: {
+    color: theme.colors.primary,
+    fontSize: 24,
+    fontFamily: theme.fonts.title,
+    marginLeft: theme.spacing.m,
+  },
+  levelUpCard: {
+    alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
+  levelUpText: {
+    color: theme.colors.success,
+    fontSize: 32,
+    fontFamily: theme.fonts.title,
+    letterSpacing: 2,
+  },
+  newTitle: {
+    color: theme.colors.text,
+    fontSize: 16,
+    fontFamily: theme.fonts.subtitle,
+    marginTop: theme.spacing.s,
+  },
+  homeButton: {
+    width: '100%',
+    ...theme.shadows.card,
+  },
+  homeButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing.l,
+    borderRadius: theme.borderRadius.m,
+  },
+  homeButtonText: {
+    color: theme.colors.background,
+    fontSize: 16,
+    fontFamily: theme.fonts.title,
+    marginLeft: theme.spacing.m,
+    letterSpacing: 1,
+  }
 });

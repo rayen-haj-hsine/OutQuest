@@ -12,10 +12,26 @@ import QuestDetailScreen from './src/screens/QuestDetailScreen';
 import CompleteQuestScreen from './src/screens/CompleteQuestScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import LeaderboardScreen from './src/screens/LeaderboardScreen';
+import PublicProfileScreen from './src/screens/PublicProfileScreen';
+
+
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, Cinzel_400Regular, Cinzel_700Bold } from '@expo-google-fonts/cinzel';
+import { Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+
+SplashScreen.preventAutoHideAsync();
+
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Cinzel_400Regular,
+    Cinzel_700Bold,
+    Inter_400Regular,
+    Inter_700Bold,
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +71,13 @@ export default function App() {
     initAuth();
   }, []);
 
-  if (loading || error) {
+  useEffect(() => {
+    if (fontsLoaded && !loading) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, loading]);
+
+  if (!fontsLoaded || loading || error) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, padding: 20 }}>
         {loading ? (
@@ -97,6 +119,7 @@ export default function App() {
           <Stack.Screen name="CompleteQuest" component={CompleteQuestScreen} options={{ title: 'Submit Proof' }} />
           <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Quest Complete', headerShown: false }} />
           <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+          <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Adventurer' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </>
