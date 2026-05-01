@@ -1,31 +1,33 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CheckCircle, Share2, Home, Star } from 'lucide-react-native';
-import { theme } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ResultScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { quest, earnedXp, levelUp, newTitle } = route.params;
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
 
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={['#1A1A1F', theme.colors.background]}
+        colors={[theme.colors.background === '#0F0F12' ? '#1A1A1F' : '#EAE6DF', theme.colors.background]}
         style={styles.gradient}
       >
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <CheckCircle color={theme.colors.success} size={80} />
+            <CheckCircle color={theme.colors.success} size={80 * fontScale} />
           </View>
 
           <Text style={styles.congrats}>QUEST COMPLETE</Text>
           <Text style={styles.questTitle}>{quest.title}</Text>
 
           <View style={styles.rewardCard}>
-            <Star color={theme.colors.primary} size={24} fill={theme.colors.primary} />
+            <Star color={theme.colors.primary} size={24 * fontScale} fill={theme.colors.primary} />
             <Text style={styles.xpGained}>+{earnedXp} XP</Text>
           </View>
 
@@ -38,10 +40,10 @@ export default function ResultScreen() {
 
           <TouchableOpacity style={styles.homeButton} onPress={() => navigation.navigate('Home')}>
             <LinearGradient
-              colors={[theme.colors.primary, '#B8860B']}
+              colors={[theme.colors.primary, theme.colors.background === '#0F0F12' ? '#B8860B' : '#8A6308']}
               style={styles.homeButtonGradient}
             >
-              <Home color={theme.colors.background} size={20} />
+              <Home color={theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF'} size={20 * fontScale} />
               <Text style={styles.homeButtonText}>RETURN TO SANCTUARY</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -51,7 +53,7 @@ export default function ResultScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -70,14 +72,14 @@ const styles = StyleSheet.create({
   },
   congrats: {
     color: theme.colors.primary,
-    fontSize: 20,
+    fontSize: 20 * fontScale,
     fontFamily: theme.fonts.subtitle,
     letterSpacing: 4,
     marginBottom: theme.spacing.s,
   },
   questTitle: {
     color: theme.colors.text,
-    fontSize: 28,
+    fontSize: 28 * fontScale,
     fontFamily: theme.fonts.title,
     textAlign: 'center',
     marginBottom: theme.spacing.xxl,
@@ -95,7 +97,7 @@ const styles = StyleSheet.create({
   },
   xpGained: {
     color: theme.colors.primary,
-    fontSize: 24,
+    fontSize: 24 * fontScale,
     fontFamily: theme.fonts.title,
     marginLeft: theme.spacing.m,
   },
@@ -105,13 +107,13 @@ const styles = StyleSheet.create({
   },
   levelUpText: {
     color: theme.colors.success,
-    fontSize: 32,
+    fontSize: 32 * fontScale,
     fontFamily: theme.fonts.title,
     letterSpacing: 2,
   },
   newTitle: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: 16 * fontScale,
     fontFamily: theme.fonts.subtitle,
     marginTop: theme.spacing.s,
   },
@@ -127,8 +129,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.m,
   },
   homeButtonText: {
-    color: theme.colors.background,
-    fontSize: 16,
+    color: theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF',
+    fontSize: 16 * fontScale,
     fontFamily: theme.fonts.title,
     marginLeft: theme.spacing.m,
     letterSpacing: 1,

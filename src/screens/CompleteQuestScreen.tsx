@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { ShieldCheck, Feather, Scroll as ScrollIcon, Camera, X } from 'lucide-react-native';
-import { auth, fetchUserProfile, updateUserProfile, recordQuestCompletion } from '../services/firebase';
+import { auth, fetchUserProfile, updateUserProfile, recordQuestCompletion, uploadImage } from '../services/supabase';
 import { Quest } from '../types';
-import { theme } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { calculateLevel } from '../utils/xp';
 
 export default function CompleteQuestScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { quest } = route.params as { quest: Quest };
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
 
   const [report, setReport] = useState('');
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function CompleteQuestScreen() {
       mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.2, // Aggressive compression for zero-budget storage
+      quality: 0.2, 
       base64: true,
     });
 
@@ -95,7 +97,7 @@ export default function CompleteQuestScreen() {
         proofTypes,
         reportPreview: report.substring(0, 100),
         reportFull: report,
-        photoUrl: photoBase64 || undefined, // Saving base64 string directly as the URL
+        photoUrl: photoBase64 || undefined,
         createdAt: Date.now()
       });
 
@@ -117,14 +119,14 @@ export default function CompleteQuestScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <ScrollIcon color={theme.colors.primary} size={32} />
+        <ScrollIcon color={theme.colors.primary} size={32 * fontScale} />
         <Text style={styles.headerTitle}>CHRONICLE YOUR DEED</Text>
         <Text style={styles.questTitle}>{quest.title}</Text>
       </View>
 
       <View style={styles.section}>
         <View style={styles.labelRow}>
-          <Feather color={theme.colors.primary} size={16} />
+          <Feather color={theme.colors.primary} size={16 * fontScale} />
           <Text style={styles.label}>SCRIBE'S NOTES (+15 XP)</Text>
         </View>
         <TextInput
@@ -140,7 +142,7 @@ export default function CompleteQuestScreen() {
 
       <View style={styles.section}>
         <View style={styles.labelRow}>
-          <Camera color={theme.colors.primary} size={16} />
+          <Camera color={theme.colors.primary} size={16 * fontScale} />
           <Text style={styles.label}>VISUAL EVIDENCE (+25 XP)</Text>
         </View>
         
@@ -148,7 +150,7 @@ export default function CompleteQuestScreen() {
           <View style={styles.previewContainer}>
             <Image source={{ uri: photoPreview }} style={styles.previewImage} />
             <TouchableOpacity style={styles.removePhoto} onPress={() => { setPhotoPreview(null); setPhotoBase64(null); }}>
-              <X color="#fff" size={20} />
+              <X color="#fff" size={20 * fontScale} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -159,7 +161,7 @@ export default function CompleteQuestScreen() {
       </View>
 
       <View style={styles.oathContainer}>
-        <ShieldCheck color={theme.colors.primary} size={24} />
+        <ShieldCheck color={theme.colors.primary} size={24 * fontScale} />
         <Text style={styles.oathTitle}>THE OATH OF TRUTH</Text>
         <Text style={styles.oathText}>
           "I take a solemn oath upon my honor as a Wanderer that I have completed this quest in the physical realm."
@@ -172,7 +174,7 @@ export default function CompleteQuestScreen() {
         disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color={theme.colors.background} />
+          <ActivityIndicator color={theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF'} />
         ) : (
           <Text style={styles.submitButtonText}>I SWEAR BY THE MYTH</Text>
         )}
@@ -181,25 +183,25 @@ export default function CompleteQuestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.l, paddingTop: theme.spacing.xl },
   header: { alignItems: 'center', marginBottom: theme.spacing.xl },
-  headerTitle: { color: theme.colors.textMuted, fontSize: 12, fontFamily: theme.fonts.subtitle, letterSpacing: 3, marginTop: theme.spacing.m },
-  questTitle: { color: theme.colors.text, fontSize: 24, fontFamily: theme.fonts.title, textAlign: 'center', marginTop: theme.spacing.xs },
+  headerTitle: { color: theme.colors.textMuted, fontSize: 12 * fontScale, fontFamily: theme.fonts.subtitle, letterSpacing: 3, marginTop: theme.spacing.m },
+  questTitle: { color: theme.colors.text, fontSize: 24 * fontScale, fontFamily: theme.fonts.title, textAlign: 'center', marginTop: theme.spacing.xs },
   section: { marginBottom: theme.spacing.xl },
   labelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.s },
-  label: { color: theme.colors.primary, fontSize: 12, fontFamily: theme.fonts.subtitle, marginLeft: theme.spacing.s, letterSpacing: 1 },
-  input: { backgroundColor: theme.colors.card, color: theme.colors.text, padding: theme.spacing.m, borderRadius: theme.borderRadius.m, borderWidth: 1, borderColor: theme.colors.border, minHeight: 100, textAlignVertical: 'top', fontFamily: theme.fonts.body },
+  label: { color: theme.colors.primary, fontSize: 12 * fontScale, fontFamily: theme.fonts.subtitle, marginLeft: theme.spacing.s, letterSpacing: 1 },
+  input: { backgroundColor: theme.colors.card, color: theme.colors.text, padding: theme.spacing.m, borderRadius: theme.borderRadius.m, borderWidth: 1, borderColor: theme.colors.border, minHeight: 100, textAlignVertical: 'top', fontFamily: theme.fonts.body, fontSize: 14 * fontScale },
   photoButton: { backgroundColor: theme.colors.card, paddingVertical: theme.spacing.xl, borderRadius: theme.borderRadius.m, borderWidth: 1, borderColor: theme.colors.primary, borderStyle: 'dashed', alignItems: 'center' },
-  photoButtonText: { color: theme.colors.primary, fontFamily: theme.fonts.title, letterSpacing: 1 },
+  photoButtonText: { color: theme.colors.primary, fontSize: 14 * fontScale, fontFamily: theme.fonts.title, letterSpacing: 1 },
   previewContainer: { position: 'relative' },
   previewImage: { width: '100%', height: 200, borderRadius: theme.borderRadius.m },
   removePhoto: { position: 'absolute', top: 10, right: 10, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 15, padding: 5 },
   oathContainer: { backgroundColor: theme.colors.card, padding: theme.spacing.l, borderRadius: theme.borderRadius.l, borderWidth: 1, borderColor: theme.colors.primary + '40', alignItems: 'center', marginBottom: theme.spacing.xxl, borderStyle: 'dashed' },
-  oathTitle: { color: theme.colors.primary, fontSize: 14, fontFamily: theme.fonts.title, marginTop: theme.spacing.s, letterSpacing: 2 },
-  oathText: { color: theme.colors.text, fontSize: 14, fontFamily: theme.fonts.body, fontStyle: 'italic', textAlign: 'center', marginTop: theme.spacing.m, lineHeight: 20, opacity: 0.8 },
+  oathTitle: { color: theme.colors.primary, fontSize: 14 * fontScale, fontFamily: theme.fonts.title, marginTop: theme.spacing.s, letterSpacing: 2 },
+  oathText: { color: theme.colors.text, fontSize: 14 * fontScale, fontFamily: theme.fonts.body, fontStyle: 'italic', textAlign: 'center', marginTop: theme.spacing.m, lineHeight: 20 * fontScale, opacity: 0.8 },
   submitButton: { backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.l, borderRadius: theme.borderRadius.xl, alignItems: 'center', ...theme.shadows.glow },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { color: theme.colors.background, fontSize: 16, fontFamily: theme.fonts.title, letterSpacing: 1 }
+  submitButtonText: { color: theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF', fontSize: 16 * fontScale, fontFamily: theme.fonts.title, letterSpacing: 1 }
 });

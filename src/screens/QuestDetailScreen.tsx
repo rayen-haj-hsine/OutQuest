@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Award, ShieldAlert, ArrowLeft } from 'lucide-react-native';
 import { Quest } from '../types';
-import { theme } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
 export default function QuestDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const { quest } = route.params as { quest: Quest };
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
 
   return (
     <View style={styles.container}>
@@ -24,7 +26,7 @@ export default function QuestDetailScreen() {
 
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Award color={theme.colors.primary} size={20} />
+            <Award color={theme.colors.primary} size={20 * fontScale} />
             <Text style={styles.infoValue}>{quest.baseXp}</Text>
             <Text style={styles.infoLabel}>XP REWARD</Text>
           </View>
@@ -44,7 +46,7 @@ export default function QuestDetailScreen() {
 
         {quest.safetyNotes && (
           <View style={styles.safetySection}>
-            <ShieldAlert color={theme.colors.danger} size={18} />
+            <ShieldAlert color={theme.colors.danger} size={18 * fontScale} />
             <Text style={styles.safetyText}>{quest.safetyNotes}</Text>
           </View>
         )}
@@ -55,7 +57,7 @@ export default function QuestDetailScreen() {
           onPress={() => navigation.navigate('CompleteQuest', { quest })}
         >
           <LinearGradient
-            colors={[theme.colors.secondary, '#5A1212']}
+            colors={[theme.colors.secondary, theme.colors.background === '#0F0F12' ? '#5A1212' : '#C62828']}
             style={styles.acceptButton}
           >
             <Text style={styles.acceptButtonText}>ACCEPT QUEST</Text>
@@ -66,7 +68,7 @@ export default function QuestDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -80,14 +82,14 @@ const styles = StyleSheet.create({
   },
   category: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.body,
     letterSpacing: 2,
     marginBottom: theme.spacing.s,
   },
   title: {
     color: theme.colors.text,
-    fontSize: 32,
+    fontSize: 32 * fontScale,
     fontFamily: theme.fonts.title,
     textAlign: 'center',
     marginBottom: theme.spacing.m,
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
   },
   difficultyText: {
     color: theme.colors.primary,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.subtitle,
     letterSpacing: 1,
   },
@@ -119,13 +121,13 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     color: theme.colors.text,
-    fontSize: 18,
+    fontSize: 18 * fontScale,
     fontFamily: theme.fonts.title,
     marginTop: theme.spacing.s,
   },
   infoLabel: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 10 * fontScale,
     fontFamily: theme.fonts.body,
     marginTop: 2,
   },
@@ -134,19 +136,19 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: theme.colors.primary,
-    fontSize: 14,
+    fontSize: 14 * fontScale,
     fontFamily: theme.fonts.subtitle,
     letterSpacing: 2,
     marginBottom: theme.spacing.m,
   },
   description: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: 16 * fontScale,
     fontFamily: theme.fonts.body,
-    lineHeight: 24,
+    lineHeight: 24 * fontScale,
   },
   proofBox: {
-    backgroundColor: '#000',
+    backgroundColor: theme.colors.background === '#0F0F12' ? '#000' : '#E5E0D8',
     padding: theme.spacing.m,
     borderRadius: theme.borderRadius.m,
     borderLeftWidth: 4,
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
   },
   proofText: {
     color: theme.colors.text,
-    fontSize: 14,
+    fontSize: 14 * fontScale,
     fontFamily: theme.fonts.body,
     fontStyle: 'italic',
   },
@@ -168,7 +170,7 @@ const styles = StyleSheet.create({
   },
   safetyText: {
     color: theme.colors.danger,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.body,
     marginLeft: theme.spacing.s,
     flex: 1,
@@ -182,8 +184,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   acceptButtonText: {
-    color: theme.colors.text,
-    fontSize: 18,
+    color: '#FFF',
+    fontSize: 18 * fontScale,
     fontFamily: theme.fonts.title,
     letterSpacing: 2,
   },

@@ -1,21 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Trophy, Medal, Star } from 'lucide-react-native';
-import { getTopUsers } from '../services/firebase';
+import { getTopUsers } from '../services/supabase';
 import { UserProfile } from '../types';
-import { theme } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 
-const RankIcon = ({ rank }: { rank: number }) => {
-  if (rank === 1) return <Trophy color={theme.colors.gold} size={24} />;
-  if (rank === 2) return <Medal color={theme.colors.silver} size={22} />;
-  if (rank === 3) return <Medal color={theme.colors.bronze} size={20} />;
-  return <Text style={styles.rankNumber}>{rank}</Text>;
+const RankIcon = ({ rank, theme, fontScale }: { rank: number, theme: any, fontScale: number }) => {
+  if (rank === 1) return <Trophy color={theme.colors.gold} size={24 * fontScale} />;
+  if (rank === 2) return <Medal color={theme.colors.silver} size={22 * fontScale} />;
+  if (rank === 3) return <Medal color={theme.colors.bronze} size={20 * fontScale} />;
+  return <Text style={{ color: theme.colors.textMuted, fontSize: 16 * fontScale, fontFamily: theme.fonts.title }}>{rank}</Text>;
 };
 
 export default function LeaderboardScreen() {
   const navigation = useNavigation<any>();
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
+
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,11 +56,11 @@ export default function LeaderboardScreen() {
         onPress={() => navigation.navigate('PublicProfile', { uid: item.uid })}
       >
         <LinearGradient
-          colors={isTop3 ? ['#2D2D35', '#1A1A1F'] : [theme.colors.card, theme.colors.card]}
+          colors={isTop3 ? (theme.colors.background === '#0F0F12' ? ['#2D2D35', '#1A1A1F'] : ['#EAE6DF', '#F4F1EA']) : [theme.colors.card, theme.colors.card]}
           style={[styles.userRow, isTop3 && styles.top3Row]}
         >
           <View style={styles.rankSection}>
-            <RankIcon rank={rank} />
+            <RankIcon rank={rank} theme={theme} fontScale={fontScale} />
           </View>
 
           <View style={styles.userSection}>
@@ -90,7 +93,7 @@ export default function LeaderboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -111,13 +114,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: theme.colors.primary,
-    fontSize: 24,
+    fontSize: 24 * fontScale,
     fontFamily: theme.fonts.title,
     letterSpacing: 2,
   },
   headerSub: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.body,
     marginTop: 4,
   },
@@ -135,14 +138,9 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.l,
   },
   rankSection: {
-    width: 40,
+    width: 40 * fontScale,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  rankNumber: {
-    color: theme.colors.textMuted,
-    fontSize: 16,
-    fontFamily: theme.fonts.title,
   },
   userSection: {
     flex: 1,
@@ -150,16 +148,16 @@ const styles = StyleSheet.create({
   },
   username: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: 16 * fontScale,
     fontFamily: theme.fonts.bodyBold,
   },
   top3Username: {
-    fontSize: 18,
+    fontSize: 18 * fontScale,
     color: theme.colors.primary,
   },
   userTitle: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.subtitle,
   },
   xpSection: {
@@ -167,12 +165,12 @@ const styles = StyleSheet.create({
   },
   xpValue: {
     color: theme.colors.text,
-    fontSize: 16,
+    fontSize: 16 * fontScale,
     fontFamily: theme.fonts.bodyBold,
   },
   xpLabel: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 10 * fontScale,
     fontFamily: theme.fonts.body,
   }
 });

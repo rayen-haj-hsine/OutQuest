@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, Trophy, Sword, ChevronRight } from 'lucide-react-native';
-import { auth, fetchUserProfile } from '../services/firebase';
+import { auth, fetchUserProfile } from '../services/supabase';
 import { UserProfile } from '../types';
-import { theme } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { getTotalXpForLevel } from '../utils/xp';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
+  
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +65,7 @@ export default function HomeScreen() {
       </View>
       
       <LinearGradient
-        colors={[theme.colors.card, '#121217']}
+        colors={[theme.colors.card, theme.colors.background === '#0F0F12' ? '#121217' : '#EAE6DF']}
         style={[styles.statsCard, theme.shadows.card]}
       >
         <View style={styles.levelBadge}>
@@ -73,7 +76,7 @@ export default function HomeScreen() {
         <View style={styles.progressSection}>
           <View style={styles.progressBarBg}>
             <LinearGradient
-              colors={[theme.colors.primary, '#B8860B']}
+              colors={[theme.colors.primary, theme.colors.background === '#0F0F12' ? '#B8860B' : '#8A6308']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
@@ -92,12 +95,12 @@ export default function HomeScreen() {
         style={styles.mainAction}
       >
         <LinearGradient
-          colors={[theme.colors.primary, '#B8860B']}
+          colors={[theme.colors.primary, theme.colors.background === '#0F0F12' ? '#B8860B' : '#8A6308']}
           style={styles.mainActionButton}
         >
-          <Sword color={theme.colors.background} size={24} />
+          <Sword color={theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF'} size={24} />
           <Text style={styles.mainActionText}>FIND A QUEST</Text>
-          <ChevronRight color={theme.colors.background} size={20} />
+          <ChevronRight color={theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF'} size={20} />
         </LinearGradient>
       </TouchableOpacity>
       
@@ -122,7 +125,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -141,7 +144,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.primary,
-    fontSize: 28,
+    fontSize: 28 * fontScale,
     fontFamily: theme.fonts.title,
     marginBottom: theme.spacing.xs,
     textTransform: 'uppercase',
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
   },
   username: {
     color: theme.colors.textMuted,
-    fontSize: 16,
+    fontSize: 16 * fontScale,
     fontFamily: theme.fonts.body,
     letterSpacing: 1,
   },
@@ -166,7 +169,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#000',
+    backgroundColor: theme.colors.background === '#0F0F12' ? '#000' : '#FFF',
     borderWidth: 2,
     borderColor: theme.colors.primary,
     justifyContent: 'center',
@@ -175,13 +178,13 @@ const styles = StyleSheet.create({
   },
   levelNumber: {
     color: theme.colors.primary,
-    fontSize: 22,
+    fontSize: 22 * fontScale,
     fontFamily: theme.fonts.title,
-    lineHeight: 26,
+    lineHeight: 26 * fontScale,
   },
   levelLabel: {
     color: theme.colors.primary,
-    fontSize: 8,
+    fontSize: 8 * fontScale,
     fontFamily: theme.fonts.subtitle,
     marginTop: -2,
   },
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: '#000',
+    backgroundColor: theme.colors.background === '#0F0F12' ? '#000' : '#E5E0D8',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: theme.spacing.s,
@@ -205,12 +208,12 @@ const styles = StyleSheet.create({
   },
   xpText: {
     color: theme.colors.text,
-    fontSize: 14,
+    fontSize: 14 * fontScale,
     fontFamily: theme.fonts.bodyBold,
   },
   xpTextMuted: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.body,
     marginLeft: 4,
   },
@@ -227,8 +230,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.xl,
   },
   mainActionText: {
-    color: theme.colors.background,
-    fontSize: 18,
+    color: theme.colors.background === '#0F0F12' ? theme.colors.background : '#FFF',
+    fontSize: 18 * fontScale,
     fontFamily: theme.fonts.title,
     letterSpacing: 2,
   },
@@ -250,7 +253,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: theme.colors.text,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.subtitle,
     marginLeft: theme.spacing.s,
     letterSpacing: 1,
@@ -258,5 +261,6 @@ const styles = StyleSheet.create({
   text: {
     color: theme.colors.text,
     fontFamily: theme.fonts.body,
+    fontSize: 14 * fontScale,
   }
 });

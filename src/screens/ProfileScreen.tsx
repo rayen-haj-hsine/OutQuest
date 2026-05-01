@@ -1,38 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Switch, Alert } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, FlatList, Image, Modal } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { User, Bell, Shield, LogOut, Trash2, Settings as SettingsIcon, ChevronRight, Volume2, Fingerprint } from 'lucide-react-native';
-import { auth, fetchUserProfile } from '../services/firebase';
-import { UserProfile } from '../types';
-import { theme } from '../utils/theme';
+import { Settings as SettingsIcon, Scroll, Calendar, X } from 'lucide-react-native';
+import { auth, fetchUserProfile, fetchUserCompletions } from '../services/supabase';
+import { UserProfile, QuestCompletion } from '../types';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [completions, setCompletions] = useState<QuestCompletion[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Settings States (Mocked for UI)
-  const [notifications, setNotifications] = useState(true);
-  const [haptics, setHaptics] = useState(true);
-  const [sounds, setSounds] = useState(false);
+  // Detail View State for Chronicle
+  const [selectedAchievement, setSelectedAchievement] = useState<QuestCompletion | null>(null);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      const uid = auth.currentUser?.uid;
-      if (uid) {
-        const data = await fetchUserProfile(uid);
-        setProfile(data);
+    const loadProfileData = async () => {
+      try {
+        const uid = auth.currentUser?.uid;
+        if (uid) {
+          const [uProfile, uCompletions] = await Promise.all([
+            fetchUserProfile(uid),
+            fetchUserCompletions(uid)
+          ]);
+          setProfile(uProfile);
+          setCompletions(uCompletions);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    loadProfile();
+    loadProfileData();
   }, []);
-
-  const handleLogout = () => {
-    Alert.alert("Sign Out", "Are you sure you want to return to the shadows? Your progress is saved to this device.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign Out", style: "destructive", onPress: () => {} } // In a real app, call auth.signOut()
-    ]);
-  };
 
   if (loading || !profile) {
     return (
@@ -42,17 +48,50 @@ export default function ProfileScreen() {
     );
   }
 
+  const renderCompletion = ({ item }: { item: QuestCompletion }) => (
+    <TouchableOpacity 
+      activeOpacity={0.8}
+      onPress={() => setSelectedAchievement(item)}
+      style={styles.achievementCard}
+    >
+      <View style={styles.achievementMain}>
+        <View style={styles.achievementHeader}>
+          <Text style={styles.achievementTitle}>{item.questTitle}</Text>
+          <Text style={styles.achievementXp}>+{item.xpEarned} XP</Text>
+        </View>
+        <View style={styles.achievementMeta}>
+          <Calendar size={12 * fontScale} color={theme.colors.textMuted} />
+          <Text style={styles.achievementDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
+      {item.photoUrl && (
+        <View style={styles.achievementThumbContainer}>
+          <Image source={{ uri: item.photoUrl }} style={styles.achievementThumb} />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
       <LinearGradient
         colors={[theme.colors.card, theme.colors.background]}
         style={styles.header}
       >
+        <TouchableOpacity 
+          style={styles.settingsButton} 
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <SettingsIcon color={theme.colors.text} size={24 * fontScale} />
+        </TouchableOpacity>
+
         <View style={styles.avatarContainer}>
           <Text style={styles.avatar}>{profile.avatarPreset}</Text>
           {profile.isTester && (
             <View style={styles.testerBadge}>
-              <Text style={styles.testerText}>TESTER</Text>
+               <Text style={styles.testerText}>TESTER</Text>
             </View>
           )}
         </View>
@@ -77,198 +116,118 @@ export default function ProfileScreen() {
         </View>
       </LinearGradient>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>PREFERENCES</Text>
-        
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Bell color={theme.colors.primary} size={20} />
-            <Text style={styles.settingLabel}>Quest Reminders</Text>
-          </View>
-          <Switch 
-            value={notifications} 
-            onValueChange={setNotifications}
-            trackColor={{ false: '#333', true: theme.colors.primary + '80' }}
-            thumbColor={notifications ? theme.colors.primary : '#666'}
-          />
+      <View style={styles.body}>
+        <View style={styles.sectionTitleRow}>
+          <Scroll color={theme.colors.primary} size={20 * fontScale} />
+          <Text style={styles.sectionTitle}>MY CHRONICLE</Text>
         </View>
 
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Fingerprint color={theme.colors.primary} size={20} />
-            <Text style={styles.settingLabel}>Haptic Feedback</Text>
-          </View>
-          <Switch 
-            value={haptics} 
-            onValueChange={setHaptics}
-            trackColor={{ false: '#333', true: theme.colors.primary + '80' }}
-            thumbColor={haptics ? theme.colors.primary : '#666'}
+        {completions.length === 0 ? (
+          <Text style={styles.emptyText}>You haven't completed any quests yet.</Text>
+        ) : (
+          <FlatList
+            data={completions}
+            renderItem={renderCompletion}
+            keyExtractor={(item, index) => index.toString()}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
           />
-        </View>
-
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Volume2 color={theme.colors.primary} size={20} />
-            <Text style={styles.settingLabel}>Sound Effects</Text>
-          </View>
-          <Switch 
-            value={sounds} 
-            onValueChange={setSounds}
-            trackColor={{ false: '#333', true: theme.colors.primary + '80' }}
-            thumbColor={sounds ? theme.colors.primary : '#666'}
-          />
-        </View>
+        )}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ACCOUNT</Text>
-        
-        <TouchableOpacity style={styles.settingRow} onPress={() => {}}>
-          <View style={styles.settingInfo}>
-            <Shield color={theme.colors.primary} size={20} />
-            <Text style={styles.settingLabel}>Privacy & Terms</Text>
-          </View>
-          <ChevronRight color={theme.colors.textMuted} size={18} />
-        </TouchableOpacity>
+      {/* Detail Modal */}
+      <Modal
+        visible={!!selectedAchievement}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSelectedAchievement(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>DEED DETAILS</Text>
+              <TouchableOpacity onPress={() => setSelectedAchievement(null)}>
+                <X color={theme.colors.text} size={24 * fontScale} />
+              </TouchableOpacity>
+            </View>
 
-        <TouchableOpacity style={styles.settingRow} onPress={handleLogout}>
-          <View style={styles.settingInfo}>
-            <LogOut color={theme.colors.danger} size={20} />
-            <Text style={[styles.settingLabel, { color: theme.colors.danger }]}>Sign Out</Text>
-          </View>
-        </TouchableOpacity>
+            {selectedAchievement && (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={styles.detailQuestTitle}>{selectedAchievement.questTitle}</Text>
+                
+                {selectedAchievement.photoUrl && (
+                  <View style={styles.detailImageContainer}>
+                    <Image 
+                      source={{ uri: selectedAchievement.photoUrl }} 
+                      style={styles.detailImage} 
+                      resizeMode="cover"
+                    />
+                  </View>
+                )}
 
-        <TouchableOpacity style={[styles.settingRow, { borderBottomWidth: 0 }]} onPress={() => {}}>
-          <View style={styles.settingInfo}>
-            <Trash2 color={theme.colors.danger} size={20} />
-            <Text style={[styles.settingLabel, { color: theme.colors.danger }]}>Delete Data</Text>
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailLabel}>SCRIBE'S RECORD</Text>
+                  <Text style={styles.detailReport}>
+                    {selectedAchievement.reportFull || "No written record was made for this deed."}
+                  </Text>
+                </View>
+
+                <View style={styles.detailFooter}>
+                  <Text style={styles.detailDate}>
+                    Dated: {new Date(selectedAchievement.createdAt).toLocaleString()}
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
           </View>
-        </TouchableOpacity>
-      </View>
-      
-      <Text style={styles.version}>OUTQUEST v1.0.0 (MVP)</Text>
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-  },
-  header: {
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: theme.spacing.m,
-  },
-  avatar: {
-    fontSize: 72,
-    marginBottom: theme.spacing.s,
-  },
-  testerBadge: {
-    position: 'absolute',
-    bottom: 5,
-    right: -10,
-    backgroundColor: theme.colors.secondary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: theme.colors.text,
-  },
-  testerText: {
-    color: theme.colors.text,
-    fontSize: 8,
-    fontFamily: theme.fonts.bodyBold,
-  },
-  username: {
-    fontSize: 28,
-    fontFamily: theme.fonts.title,
-    color: theme.colors.text,
-    letterSpacing: 1,
-  },
-  titleText: {
-    fontSize: 16,
-    fontFamily: theme.fonts.subtitle,
-    color: theme.colors.primary,
-    marginTop: 4,
-    letterSpacing: 2,
-  },
-  quickStats: {
-    flexDirection: 'row',
-    marginTop: theme.spacing.xl,
-    backgroundColor: '#00000040',
-    padding: theme.spacing.m,
-    borderRadius: theme.borderRadius.m,
-    width: '90%',
-    justifyContent: 'space-around',
-  },
-  quickStatItem: {
-    alignItems: 'center',
-  },
-  quickStatValue: {
-    color: theme.colors.text,
-    fontSize: 20,
-    fontFamily: theme.fonts.title,
-  },
-  quickStatLabel: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    fontFamily: theme.fonts.body,
-    marginTop: 2,
-  },
-  quickStatDivider: {
-    width: 1,
-    backgroundColor: theme.colors.border,
-    height: '100%',
-  },
-  section: {
-    marginTop: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.l,
-  },
-  sectionTitle: {
-    color: theme.colors.primary,
-    fontSize: 12,
-    fontFamily: theme.fonts.subtitle,
-    letterSpacing: 2,
-    marginBottom: theme.spacing.m,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border + '40',
-  },
-  settingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingLabel: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontFamily: theme.fonts.body,
-    marginLeft: theme.spacing.m,
-  },
-  version: {
-    textAlign: 'center',
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    fontFamily: theme.fonts.body,
-    marginTop: theme.spacing.xxl,
-    letterSpacing: 1,
-  }
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  header: { alignItems: 'center', paddingVertical: theme.spacing.xl, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  settingsButton: { position: 'absolute', top: theme.spacing.xl, right: theme.spacing.xl, zIndex: 10 },
+  avatarContainer: { position: 'relative', marginBottom: theme.spacing.m },
+  avatar: { fontSize: 72 * fontScale, marginBottom: theme.spacing.s },
+  testerBadge: { position: 'absolute', bottom: 5, right: -10, backgroundColor: theme.colors.secondary, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: theme.colors.background },
+  testerText: { color: theme.colors.background === '#0F0F12' ? theme.colors.text : '#FFF', fontSize: 8 * fontScale, fontFamily: theme.fonts.bodyBold },
+  username: { fontSize: 28 * fontScale, fontFamily: theme.fonts.title, color: theme.colors.text, letterSpacing: 1 },
+  titleText: { fontSize: 16 * fontScale, fontFamily: theme.fonts.subtitle, color: theme.colors.primary, marginTop: 4, letterSpacing: 2 },
+  quickStats: { flexDirection: 'row', marginTop: theme.spacing.xl, backgroundColor: theme.colors.background === '#0F0F12' ? '#00000040' : '#00000010', padding: theme.spacing.m, borderRadius: theme.borderRadius.m, width: '90%', justifyContent: 'space-around' },
+  quickStatItem: { alignItems: 'center' },
+  quickStatValue: { color: theme.colors.text, fontSize: 20 * fontScale, fontFamily: theme.fonts.title },
+  quickStatLabel: { color: theme.colors.textMuted, fontSize: 10 * fontScale, fontFamily: theme.fonts.body, marginTop: 2 },
+  quickStatDivider: { width: 1, backgroundColor: theme.colors.border, height: '100%' },
+  body: { flex: 1, padding: theme.spacing.l },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.m },
+  sectionTitle: { color: theme.colors.primary, fontSize: 14 * fontScale, fontFamily: theme.fonts.subtitle, letterSpacing: 2, marginLeft: theme.spacing.s },
+  list: { paddingBottom: theme.spacing.xl },
+  achievementCard: { backgroundColor: theme.colors.card, padding: theme.spacing.m, borderRadius: theme.borderRadius.m, marginBottom: theme.spacing.s, borderWidth: 1, borderColor: theme.colors.border, flexDirection: 'row', alignItems: 'center' },
+  achievementMain: { flex: 1 },
+  achievementHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  achievementTitle: { color: theme.colors.text, fontSize: 16 * fontScale, fontFamily: theme.fonts.title },
+  achievementXp: { color: theme.colors.primary, fontSize: 12 * fontScale, fontFamily: theme.fonts.bodyBold },
+  achievementMeta: { flexDirection: 'row', alignItems: 'center' },
+  achievementDate: { color: theme.colors.textMuted, fontSize: 11 * fontScale, fontFamily: theme.fonts.body, marginLeft: 4 },
+  achievementThumbContainer: { marginLeft: theme.spacing.m, borderWidth: 1, borderColor: theme.colors.primary + '40', borderRadius: 4, overflow: 'hidden' },
+  achievementThumb: { width: 40 * fontScale, height: 40 * fontScale },
+  emptyText: { color: theme.colors.textMuted, textAlign: 'center', marginTop: theme.spacing.xxl, fontFamily: theme.fonts.body, fontStyle: 'italic', fontSize: 14 * fontScale },
+  
+  // Modal Styles
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: theme.colors.card, height: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: theme.spacing.l, borderTopWidth: 2, borderTopColor: theme.colors.primary },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.l, borderBottomWidth: 1, borderBottomColor: theme.colors.border, paddingBottom: theme.spacing.m },
+  modalTitle: { color: theme.colors.primary, fontFamily: theme.fonts.subtitle, letterSpacing: 2, fontSize: 14 * fontScale },
+  detailQuestTitle: { color: theme.colors.text, fontSize: 24 * fontScale, fontFamily: theme.fonts.title, marginBottom: theme.spacing.l, textAlign: 'center' },
+  detailImageContainer: { width: '100%', height: 300 * fontScale, borderRadius: theme.borderRadius.l, overflow: 'hidden', marginBottom: theme.spacing.l, backgroundColor: theme.colors.background === '#0F0F12' ? '#000' : '#C3B8A5' },
+  detailImage: { width: '100%', height: '100%' },
+  detailSection: { marginBottom: theme.spacing.xl },
+  detailLabel: { color: theme.colors.primary, fontSize: 12 * fontScale, fontFamily: theme.fonts.subtitle, letterSpacing: 1, marginBottom: theme.spacing.s },
+  detailReport: { color: theme.colors.text, fontSize: 16 * fontScale, fontFamily: theme.fonts.body, lineHeight: 24 * fontScale, fontStyle: 'italic' },
+  detailFooter: { borderTopWidth: 1, borderTopColor: theme.colors.border, paddingTop: theme.spacing.m, alignItems: 'center' },
+  detailDate: { color: theme.colors.textMuted, fontSize: 12 * fontScale, fontFamily: theme.fonts.body }
 });

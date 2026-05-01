@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, Text, StatusBar, TouchableOpacity } from 'react-native';
-import { auth, signInAndGetUid, fetchUserProfile, createUserProfile } from './src/services/firebase';
+import { auth, signInAndGetUid, fetchUserProfile, createUserProfile } from './src/services/supabase';
 import { theme } from './src/utils/theme';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -13,6 +13,7 @@ import CompleteQuestScreen from './src/screens/CompleteQuestScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import LeaderboardScreen from './src/screens/LeaderboardScreen';
 import PublicProfileScreen from './src/screens/PublicProfileScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 
 import * as SplashScreen from 'expo-splash-screen';
@@ -22,7 +23,39 @@ import { Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
 SplashScreen.preventAutoHideAsync();
 
 
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+
 const Stack = createNativeStackNavigator();
+
+const NavigationContent = () => {
+  const { theme } = useTheme();
+
+  return (
+    <>
+      <StatusBar barStyle={theme.colors.background === '#0F0F12' ? "light-content" : "dark-content"} backgroundColor={theme.colors.card} />
+      <NavigationContainer>
+        <Stack.Navigator 
+          screenOptions={{
+            headerStyle: { backgroundColor: theme.colors.card },
+            headerTintColor: theme.colors.primary,
+            headerTitleStyle: { fontWeight: 'bold' },
+            contentStyle: { backgroundColor: theme.colors.background }
+          }}
+        >
+          <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'OutQuest' }} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="QuestPicker" component={QuestPickerScreen} options={{ title: 'Find a Quest' }} />
+          <Stack.Screen name="QuestDetail" component={QuestDetailScreen} options={{ title: 'Quest Details' }} />
+          <Stack.Screen name="CompleteQuest" component={CompleteQuestScreen} options={{ title: 'Submit Proof' }} />
+          <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Quest Complete', headerShown: false }} />
+          <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+          <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Adventurer' }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </>
+  );
+};
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -101,27 +134,8 @@ export default function App() {
   }
 
   return (
-    <>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.card} />
-      <NavigationContainer>
-        <Stack.Navigator 
-          screenOptions={{
-            headerStyle: { backgroundColor: theme.colors.card },
-            headerTintColor: theme.colors.primary,
-            headerTitleStyle: { fontWeight: 'bold' },
-            contentStyle: { backgroundColor: theme.colors.background }
-          }}
-        >
-          <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'OutQuest' }} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="QuestPicker" component={QuestPickerScreen} options={{ title: 'Find a Quest' }} />
-          <Stack.Screen name="QuestDetail" component={QuestDetailScreen} options={{ title: 'Quest Details' }} />
-          <Stack.Screen name="CompleteQuest" component={CompleteQuestScreen} options={{ title: 'Submit Proof' }} />
-          <Stack.Screen name="Result" component={ResultScreen} options={{ title: 'Quest Complete', headerShown: false }} />
-          <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-          <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Adventurer' }} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </>
+    <ThemeProvider>
+      <NavigationContent />
+    </ThemeProvider>
   );
 }

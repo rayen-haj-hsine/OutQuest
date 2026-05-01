@@ -4,8 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Shield, Skull, Zap, Gem, Crown, ChevronRight, Lock } from 'lucide-react-native';
 import { STARTER_QUESTS as quests } from '../data/quests';
-import { auth, fetchUserProfile, getTodayCompletions } from '../services/firebase';
-import { theme } from '../utils/theme';
+import { auth, fetchUserProfile, getTodayCompletions } from '../services/supabase';
+import { useTheme } from '../context/ThemeContext';
 import { Quest, UserProfile, QuestCompletion } from '../types';
 
 const DifficultyIcon = ({ difficulty, size = 20 }: { difficulty: string, size?: number }) => {
@@ -32,6 +32,9 @@ const getDifficultyColor = (difficulty: string) => {
 
 export default function QuestPickerScreen() {
   const navigation = useNavigation<any>();
+  const { theme, fontScale } = useTheme();
+  const styles = useMemo(() => createStyles(theme, fontScale), [theme, fontScale]);
+
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [todayCompletions, setTodayCompletions] = useState<QuestCompletion[]>([]);
@@ -55,7 +58,6 @@ export default function QuestPickerScreen() {
       }
     };
 
-    
     const unsubscribe = navigation.addListener('focus', () => {
       loadData();
     });
@@ -98,18 +100,18 @@ export default function QuestPickerScreen() {
         style={[styles.cardContainer, isLocked && styles.cardLocked]}
       >
         <LinearGradient
-          colors={[theme.colors.card, '#121217']}
+          colors={[theme.colors.card, theme.colors.background === '#0F0F12' ? '#121217' : '#EAE6DF']}
           style={styles.card}
         >
           <View style={styles.cardHeader}>
             <View style={styles.difficultyBadge}>
-              <DifficultyIcon difficulty={item.difficulty} size={14} />
+              <DifficultyIcon difficulty={item.difficulty} size={14 * fontScale} />
               <Text style={[styles.difficultyText, { color: getDifficultyColor(item.difficulty) }]}>
                 {item.difficulty.toUpperCase()}
               </Text>
             </View>
             {isLocked ? (
-              <View style={styles.lockIcon}><Lock color={theme.colors.danger} size={14} /></View>
+              <View style={styles.lockIcon}><Lock color={theme.colors.danger} size={14 * fontScale} /></View>
             ) : (
               <Text style={styles.xpBadge}>+{item.baseXp} XP</Text>
             )}
@@ -119,7 +121,7 @@ export default function QuestPickerScreen() {
           <Text style={styles.categoryText}>{item.category}</Text>
 
           <View style={styles.cardFooter}>
-            {!isLocked && <ChevronRight color={theme.colors.textMuted} size={16} />}
+            {!isLocked && <ChevronRight color={theme.colors.textMuted} size={16 * fontScale} />}
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -155,7 +157,7 @@ export default function QuestPickerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any, fontScale: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
@@ -177,7 +179,7 @@ const styles = StyleSheet.create({
   limitText: {
     color: theme.colors.text,
     fontFamily: theme.fonts.subtitle,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
   },
   list: {
     padding: theme.spacing.m,
@@ -205,30 +207,30 @@ const styles = StyleSheet.create({
   difficultyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#000000',
+    backgroundColor: theme.colors.background === '#0F0F12' ? '#000000' : '#E5E0D8',
     paddingHorizontal: theme.spacing.s,
     paddingVertical: 2,
     borderRadius: 4,
   },
   difficultyText: {
-    fontSize: 10,
+    fontSize: 10 * fontScale,
     fontFamily: theme.fonts.subtitle,
     marginLeft: 6,
     letterSpacing: 1,
   },
   xpBadge: {
     color: theme.colors.primary,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.bodyBold,
   },
   lockIcon: {
-    backgroundColor: '#000',
+    backgroundColor: theme.colors.background === '#0F0F12' ? '#000' : '#E5E0D8',
     padding: 4,
     borderRadius: 10,
   },
   questTitle: {
     color: theme.colors.text,
-    fontSize: 18,
+    fontSize: 18 * fontScale,
     fontFamily: theme.fonts.title,
     marginBottom: 2,
   },
@@ -237,7 +239,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.body,
     marginBottom: theme.spacing.m,
   },
@@ -251,7 +253,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 12 * fontScale,
     fontFamily: theme.fonts.body,
   }
 });
